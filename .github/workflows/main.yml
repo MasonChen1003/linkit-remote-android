@@ -17,10 +17,7 @@ jobs:
         java-version: '8'
         distribution: 'temurin'
         cache: gradle
-
-    - name: 給予編譯權限
-      run: chmod +x gradlew
-
+        
     - name: 🚀 開始雲端編譯 APK
       # 因為沒 gradlew 檔案，我們直接呼叫系統內建的 gradle
       run: gradle assembleDebug
