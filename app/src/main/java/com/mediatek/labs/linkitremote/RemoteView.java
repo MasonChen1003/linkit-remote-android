@@ -215,7 +215,15 @@ public class RemoteView extends AppCompatActivity {
             switch (newState) {
                 case BluetoothProfile.STATE_CONNECTED:
                     Log.d(TAG, "connected");
-                    mGatt.discoverServices();
+                    // ✨ 【核心修改在此！】
+                    // 在開始探索服務之前，先要求將 MTU 改為 512
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        Log.d(TAG, "Requesting MTU to 512");
+                        gatt.requestMtu(512); 
+                    } else {
+                        // 如果是很舊的手機（不支援請求 MTU），就直接開始探索服務
+                       mGatt.discoverServices();
+                    }
                     break;
                 case BluetoothProfile.STATE_DISCONNECTED:
                     Log.d(TAG, "device disconnected");
@@ -232,6 +240,15 @@ public class RemoteView extends AppCompatActivity {
                     Log.d(TAG, "Unhandled stat=" + String.valueOf(newState));
                     break;
             }
+        }
+        
+        @Override
+        public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
+            super.onMtuChanged(gatt, mtu, status);
+            // 無論 MTU 請求成功與否，我們都開始搜尋服務
+            // 這樣可以確保在舊手機上也能正常運作
+            gatt.discoverServices();
+            Log.d(TAG, "MTU changed to: " + mtu + " status: " + status);
         }
 
         @Override
