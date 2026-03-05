@@ -1,30 +1,35 @@
 name: Build Android APK
 
 on:
-  workflow_dispatch: # 允許你手動點擊按鈕觸發編譯
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-latest     # 使用最新版機器，排隊最快
+    runs-on: ubuntu-20.04  # 回到較穩定的舊環境
 
     steps:
     - name: 取得程式碼
       uses: actions/checkout@v4
 
-    - name: 設定 Java 17 環境
+    - name: 設定 Java 8 環境
       uses: actions/setup-java@v4
       with:
-        java-version: '17'
+        java-version: '8'
         distribution: 'temurin'
-        cache: gradle
-        
+
+    - name: 🛠️ 核心步驟：手動生成 Gradle 執行檔
+      # 既然專案沒這個檔，我們就叫系統初始化一個出來給專案用
+      run: gradle wrapper --gradle-version 4.10.3
+
+    - name: 給予編譯權限
+      run: chmod +x gradlew
+
     - name: 🚀 開始雲端編譯 APK
-      # 因為沒 gradlew 檔案，我們直接呼叫系統內建的 gradle
-      run: gradle assembleDebug
+      # 這次有了 gradlew，就能用專案原始的方式編譯了
+      run: ./gradlew assembleDebug
 
     - name: 📦 打包並提供下載連結
       uses: actions/upload-artifact@v4
       with:
         name: My-Block-Remote-APK
-        # 修改路徑匹配模式，確保一定能抓到產出的 APK
         path: "**/build/outputs/apk/debug/*.apk"
