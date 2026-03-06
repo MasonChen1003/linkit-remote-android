@@ -5,31 +5,32 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04  # 回到較穩定的舊環境
+    runs-on: ubuntu-latest  # 這裡用最新版，機器人會秒接任務，不用排隊！
 
     steps:
     - name: 取得程式碼
       uses: actions/checkout@v4
 
-    - name: 設定 Java 8 環境
+    - name: 設定 Java 11 環境
+      # 為了跑下方的下載指令，先用 Java 11
       uses: actions/setup-java@v4
       with:
-        java-version: '8'
+        java-version: '11'
         distribution: 'temurin'
 
-    - name: 🛠️ 核心步驟：手動生成 Gradle 執行檔
-      # 既然專案沒這個檔，我們就叫系統初始化一個出來給專案用
-      run: gradle wrapper --gradle-version 4.10.3
-
-    - name: 給予編譯權限
-      run: chmod +x gradlew
+    - name: 🛠️ 暴力安裝舊版 Gradle (時光機)
+      # 既然你沒 gradlew，我們直接從官網抓 2017 年的 4.10.3 版本
+      run: |
+        wget -q https://services.gradle.org/distributions/gradle-4.10.3-bin.zip
+        unzip -q gradle-4.10.3-bin.zip
+        echo "$(pwd)/gradle-4.10.3/bin" >> $GITHUB_PATH
 
     - name: 🚀 開始雲端編譯 APK
-      # 這次有了 gradlew，就能用專案原始的方式編譯了
-      run: ./gradlew assembleDebug
+      # 使用剛才下載的舊版 Gradle，並且強行指定用 Java 8 規格編譯
+      run: gradle assembleDebug --warning-mode all
 
     - name: 📦 打包並提供下載連結
       uses: actions/upload-artifact@v4
       with:
-        name: My-Block-Remote-APK
+        name: My-PicoW-Remote-APK
         path: "**/build/outputs/apk/debug/*.apk"
