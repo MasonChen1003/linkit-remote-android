@@ -5,29 +5,30 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest  # 這裡用最新版，機器人會秒接任務，不用排隊！
+    runs-on: ubuntu-latest  # 依然用最新機器，因為排隊最快
 
     steps:
     - name: 取得程式碼
       uses: actions/checkout@v4
 
-    - name: 設定 Java 11 環境
-      # 為了跑下方的下載指令，先用 Java 11
+    - name: 設定 Java 8 環境
+      # 這是最關鍵的一步：必須用 Java 8 才能繞過 JAXB 缺失的問題
       uses: actions/setup-java@v4
       with:
-        java-version: '11'
+        java-version: '8'
         distribution: 'temurin'
 
     - name: 🛠️ 暴力安裝舊版 Gradle (時光機)
-      # 既然你沒 gradlew，我們直接從官網抓 2017 年的 4.10.3 版本
       run: |
         wget -q https://services.gradle.org/distributions/gradle-4.10.3-bin.zip
         unzip -q gradle-4.10.3-bin.zip
         echo "$(pwd)/gradle-4.10.3/bin" >> $GITHUB_PATH
 
     - name: 🚀 開始雲端編譯 APK
-      # 使用剛才下載的舊版 Gradle，並且強行指定用 Java 8 規格編譯
-      run: gradle assembleDebug --warning-mode all
+      # 加入 ANDROID_NDK_HOME="" 來徹底關閉 NDK 報錯
+      env:
+        ANDROID_NDK_HOME: ""
+      run: gradle assembleDebug -x lint --warning-mode all
 
     - name: 📦 打包並提供下載連結
       uses: actions/upload-artifact@v4
